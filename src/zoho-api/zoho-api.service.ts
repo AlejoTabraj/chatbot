@@ -29,7 +29,13 @@ export class ZohoApiService {
       );
 
       if (res.data && res.data.data && res.data.data.length > 0) {
-        return res.data.data[0];
+        const data = res.data.data[0];
+        this.updateMerch(
+          data.id,
+          data.Cantidad_de_asistencias_iniciadas || 0,
+          token,
+        );
+        return data;
       } else {
         throw new Error('No se encontraron datos');
       }
@@ -55,5 +61,29 @@ export class ZohoApiService {
       },
     );
     this.cacheManager.set('AUTH_TOKEN', access_token, 1000 * 50);
+  }
+
+  async updateMerch(merchId: number, contactsCounter: number, token) {
+    try {
+      await this.http.put(
+        `https://sandbox.zohoapis.com/crm/v6/Accounts/${merchId}`,
+        {
+          data: [
+            {
+              Cantidad_de_asistencias_iniciadas: ++contactsCounter,
+              // Fecha_de_la_ltima_asistencia: new Date(),
+            },
+          ],
+        },
+        {
+          headers: {
+            Authorization: 'Zoho-oauthtoken ' + token,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (error) {
+      console.log({ error: error.response.data.data.details });
+    }
   }
 }
